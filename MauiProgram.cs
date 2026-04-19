@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using ProyectoFinal_Biblioteca.ViewModel;
 
 namespace ProyectoFinal_Biblioteca
 {
@@ -19,6 +20,11 @@ namespace ProyectoFinal_Biblioteca
     		builder.Logging.AddDebug();
 #endif
 
+            //builder.Services.AddSingleton<LibraryPage>();
+            builder.Services.AddSingleton<LibraryViewModel>();
+
+            //builder.Services.AddTransient<StatisticsPage>();
+            builder.Services.AddTransient<StatisticsViewModel>();
             return builder.Build();
         }
     }

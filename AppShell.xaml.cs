@@ -1,10 +1,9 @@
-﻿namespace ProyectoFinal_Biblioteca
+namespace ProyectoFinal_Biblioteca;
+
+public partial class AppShell : Shell
 {
-    public partial class AppShell : Shell
+    public AppShell()
     {
-        public AppShell()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }
