@@ -1,14 +1,17 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<Shell
-    x:Class="ProyectoFinal_Biblioteca.AppShell"
-    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:local="clr-namespace:ProyectoFinal_Biblioteca"
-    Title="ProyectoFinal_Biblioteca">
-
-    <ShellContent
-        Title="Home"
-        ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
-
+<?xml version="1.0" encoding="UTF-8"?>
+<Shell xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+       xmlns:views="clr-namespace:ProyectoFinal_Biblioteca.Views"
+       x:Class="ProyectoFinal_Biblioteca.AppShell">
+    <FlyoutItem Title="Mi Biblioteca" Icon="library.png">
+        <ShellContent Route="library" ContentTemplate="{DataTemplate views:LibraryPage}" />
+    </FlyoutItem>
+    <FlyoutItem Title="Buscar Libros" Icon="search.png">
+        <ShellContent Route="search" ContentTemplate="{DataTemplate views:SearchPage}" />
+    </FlyoutItem>
+    <FlyoutItem Title="Estadísticas" Icon="stats.png">
+        <ShellContent Route="statistics" ContentTemplate="{DataTemplate views:StatisticsPage}" />
+    </FlyoutItem>
+    <ShellContent Route="addbook" ContentTemplate="{DataTemplate views:AddBookPage}" />
+    <ShellContent Route="bookdetail" ContentTemplate="{DataTemplate views:BookDetailPage}" />
 </Shell>

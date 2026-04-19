@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-
-namespace ProyectoFinal_Biblioteca
+﻿namespace ProyectoFinal_Biblioteca
 {
     public partial class App : Application
     {

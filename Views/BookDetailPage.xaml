@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ProyectoFinal_Biblioteca.Views.BookDetailPage"
+             Title="Detalle del Libro">
+    <ScrollView>
+        <StackLayout Padding="20" Spacing="15">
+            <Image Source="{Binding Book.CoverUrl}" Aspect="AspectFill" HeightRequest="200" HorizontalOptions="Center" />
+            <Label Text="{Binding Book.Title}" Style="{StaticResource TitleStyle}" HorizontalOptions="Center" />
+            <Label Text="{Binding Book.Author}" Style="{StaticResource SubtitleStyle}" HorizontalOptions="Center" />
+            <Label Text="Género:" FontAttributes="Bold" />
+            <Label Text="{Binding Book.Genre}" />
+            <Label Text="ISBN:" FontAttributes="Bold" />
+            <Label Text="{Binding Book.Isbn}" />
+            <Label Text="Año:" FontAttributes="Bold" />
+            <Label Text="{Binding Book.PublishedYear}" />
+            <Label Text="Páginas:" FontAttributes="Bold" />
+            <Label Text="{Binding Book.PageCount}" />
+            <Label Text="Descripción:" FontAttributes="Bold" />
+            <Label Text="{Binding Book.Description}" />
+            <Label Text="Rating:" FontAttributes="Bold" />
+            <Slider Minimum="0" Maximum="5" Value="{Binding Book.Rating}" />
+            <Label Text="{Binding Book.Rating, StringFormat='{0:F0} ★'}" />
+            <CheckBox IsChecked="{Binding Book.IsRead}" />
+            <Label Text="¿Leído?" />
+            <Button Text="Guardar Cambios" Command="{Binding SaveChangesCommand}" Style="{StaticResource PrimaryButtonStyle}" />
+            <Button Text="Eliminar Libro" Command="{Binding DeleteBookCommand}" Style="{StaticResource SecondaryButtonStyle}" />
+        </StackLayout>
+    </ScrollView>
+</ContentPage>

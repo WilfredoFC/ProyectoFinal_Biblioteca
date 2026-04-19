@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ProyectoFinal_Biblioteca.Views.LibraryPage"
+             Title="Mi Biblioteca">
+    <Grid RowDefinitions="Auto, Auto, *">
+        <SearchBar x:Name="searchBar" Text="{Binding SearchText}" Placeholder="Buscar por título o autor..." />
+        <Picker x:Name="filterPicker" Grid.Row="1" Title="Filtrar por" ItemsSource="{Binding FilterOptions}"
+                SelectedItem="{Binding SelectedFilter}" />
+        <CollectionView Grid.Row="2" ItemsSource="{Binding Books}">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Frame Style="{StaticResource CardStyle}">
+                        <Grid ColumnDefinitions="80,*,Auto" ColumnSpacing="10">
+                            <Image Grid.Column="0" Source="{Binding CoverUrl}" Aspect="AspectFill" HeightRequest="100" />
+                            <StackLayout Grid.Column="1">
+                                <Label Text="{Binding Title}" Style="{StaticResource SubtitleStyle}" />
+                                <Label Text="{Binding Author}" />
+                                <Label Text="{Binding Genre}" Style="{StaticResource CaptionStyle}" />
+                                <Label Text="{Binding IsRead, Converter={StaticResource BoolToReadConverter}}" />
+                            </StackLayout>
+                            <StackLayout Grid.Column="2">
+                                <Button Text="✓" Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ToggleReadStatusCommand}" CommandParameter="{Binding .}" />
+                                <Button Text="✗" Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DeleteBookCommand}" CommandParameter="{Binding .}" />
+                                <Button Text="📖" Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.GoToDetailsCommand}" CommandParameter="{Binding .}" />
+                            </StackLayout>
+                        </Grid>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+            <CollectionView.EmptyView>
+                <StackLayout>
+                    <Label Text="📚" FontSize="48" HorizontalOptions="Center" />
+                    <Label Text="Tu biblioteca está vacía" HorizontalOptions="Center" />
+                    <Button Text="Agregar primer libro" Command="{Binding AddBookCommand}" Style="{StaticResource PrimaryButtonStyle}" />
+                </StackLayout>
+            </CollectionView.EmptyView>
+        </CollectionView>
+    </Grid>
+</ContentPage>

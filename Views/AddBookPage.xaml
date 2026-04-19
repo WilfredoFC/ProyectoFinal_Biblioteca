@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ProyectoFinal_Biblioteca.Views.AddBookPage"
+             Title="Agregar Libro">
+    <ScrollView>
+        <StackLayout Padding="20" Spacing="15">
+            <Entry Placeholder="Título *" Text="{Binding Book.Title}" Style="{StaticResource StandardEntryStyle}" />
+            <Entry Placeholder="Autor" Text="{Binding Book.Author}" Style="{StaticResource StandardEntryStyle}" />
+            <Entry Placeholder="Género" Text="{Binding Book.Genre}" Style="{StaticResource StandardEntryStyle}" />
+            <Entry Placeholder="ISBN" Text="{Binding Book.Isbn}" Style="{StaticResource StandardEntryStyle}" />
+            <Entry Placeholder="Año de publicación" Text="{Binding Book.PublishedYear}" Keyboard="Numeric" Style="{StaticResource StandardEntryStyle}" />
+            <Entry Placeholder="Número de páginas" Text="{Binding Book.PageCount}" Keyboard="Numeric" Style="{StaticResource StandardEntryStyle}" />
+            <Entry Placeholder="URL de la portada" Text="{Binding Book.CoverUrl}" Style="{StaticResource StandardEntryStyle}" />
+            <Editor Placeholder="Descripción" Text="{Binding Book.Description}" HeightRequest="100" Style="{StaticResource StandardEntryStyle}" />
+            <Slider Minimum="0" Maximum="5" Value="{Binding Book.Rating}" />
+            <Label Text="{Binding Book.Rating, StringFormat='Rating: {0:F0} ★'}" HorizontalOptions="Center" />
+            <Button Text="Guardar Libro" Command="{Binding SaveBookCommand}" Style="{StaticResource PrimaryButtonStyle}" />
+            <Button Text="Cancelar" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryButtonStyle}" />
+        </StackLayout>
+    </ScrollView>
+</ContentPage>
