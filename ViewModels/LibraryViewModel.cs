@@ -18,7 +18,7 @@ namespace ProyectoFinal_Biblioteca.ViewModels
         private string searchText = string.Empty;
 
         [ObservableProperty]
-        private string selectedFilter = "Todos"; // Todos, Leídos, Pendientes
+        private string selectedFilter = "Todos";
 
         public List<string> FilterOptions { get; } = new() { "Todos", "Leídos", "Pendientes" };
 
@@ -35,23 +35,32 @@ namespace ProyectoFinal_Biblioteca.ViewModels
             ApplyFilterAndSearch(allBooks);
         }
 
-        [RelayCommand]
-        private void ApplyFilter()
+        // Se ejecuta cuando cambia SearchText o SelectedFilter
+        partial void OnSearchTextChanged(string value)
         {
-            _ = LoadBooks(); // recarga aplicando filtro actual
+            _ = LoadBooks();
         }
 
-        private async void ApplyFilterAndSearch(List<Book> source)
+        partial void OnSelectedFilterChanged(string value)
+        {
+            _ = LoadBooks();
+        }
+
+        private void ApplyFilterAndSearch(List<Book> source)
         {
             IEnumerable<Book> filtered = source;
+
             if (SelectedFilter == "Leídos")
                 filtered = filtered.Where(b => b.IsRead);
             else if (SelectedFilter == "Pendientes")
                 filtered = filtered.Where(b => !b.IsRead);
 
             if (!string.IsNullOrWhiteSpace(SearchText))
-                filtered = filtered.Where(b => b.Title.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
-                                               b.Author.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+            {
+                filtered = filtered.Where(b =>
+                    b.Title.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+                    b.Author.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+            }
 
             Books = new ObservableCollection<Book>(filtered);
         }

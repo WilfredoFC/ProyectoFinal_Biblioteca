@@ -1,9 +1,12 @@
+using ProyectoFinal_Biblioteca.ViewModels;
+
 namespace ProyectoFinal_Biblioteca.Views;
 
 public partial class LibraryPage : ContentPage
 {
-	public LibraryPage()
+	public LibraryPage(LibraryViewModel viewModel)
 	{
 		InitializeComponent();
+		BindingContext = viewModel;
 	}
 }

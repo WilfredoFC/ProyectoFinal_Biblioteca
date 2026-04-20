@@ -52,5 +52,24 @@ namespace ProyectoFinal_Biblioteca.Services
             var read = all.Count(b => b.IsRead);
             return (all.Count, read, all.Count - read);
         }
+
+        public async Task SeedDataAsync()
+        {
+            var existing = await GetBooksAsync();
+            if (existing.Any()) return;
+
+            var sampleBooks = new List<Book>
+    {
+        new Book { Title = "Cien años de soledad", Author = "Gabriel García Márquez", Genre = "Novela", IsRead = true, Rating = 5, PageCount = 417, PublishedYear = 1967, CoverUrl = "https://covers.openlibrary.org/b/id/8221391-M.jpg" },
+        new Book { Title = "El Quijote", Author = "Miguel de Cervantes", Genre = "Novela", IsRead = false, Rating = 4, PageCount = 863, PublishedYear = 1605, CoverUrl = "https://covers.openlibrary.org/b/id/8221391-M.jpg" },
+        new Book { Title = "1984", Author = "George Orwell", Genre = "Ciencia Ficción", IsRead = true, Rating = 5, PageCount = 328, PublishedYear = 1949, CoverUrl = "https://covers.openlibrary.org/b/id/8221391-M.jpg" },
+        new Book { Title = "El principito", Author = "Antoine de Saint-Exupéry", Genre = "Infantil", IsRead = true, Rating = 5, PageCount = 96, PublishedYear = 1943, CoverUrl = "https://covers.openlibrary.org/b/id/8221391-M.jpg" }
+    };
+
+            foreach (var book in sampleBooks)
+            {
+                await SaveBookAsync(book);
+            }
+        }
     }
 }
