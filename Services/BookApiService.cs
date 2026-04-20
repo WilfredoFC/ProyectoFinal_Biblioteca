@@ -6,7 +6,8 @@ namespace ProyectoFinal_Biblioteca.Services
     public class BookApiService
     {
         private readonly HttpClient _httpClient;
-        private const string BaseUrl = "https://www.googleapis.com/books/v1/volumes";
+        private const string SearchUrl = "https://openlibrary.org/search.json";
+        private const string WorksUrl = "https://openlibrary.org/works";
 
         // Caché en memoria para resultados de búsqueda
         private static readonly Dictionary<string, List<BookSearchResult>> _searchCache = new();
@@ -19,7 +20,7 @@ namespace ProyectoFinal_Biblioteca.Services
         }
 
         /// <summary>
-        /// Busca libros por título o autor, con caché y reintentos en caso de error 429.
+        /// Busca libros por título o autor usando OpenLibrary API.
         /// </summary>
         public async Task<List<BookSearchResult>> SearchBooksAsync(string query)
         {
@@ -35,62 +36,37 @@ namespace ProyectoFinal_Biblioteca.Services
                     return cachedResults;
             }
 
-            // Intentar la llamada con reintentos
-            const int maxRetries = 3;
-            int delayMs = 1000; // 1 segundo inicial
-
-            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            try
             {
-                try
+                var url = $"{SearchUrl}?title={Uri.EscapeDataString(query)}&limit=40";
+                var response = await _httpClient.GetAsync(url);
+
+                if (response.IsSuccessStatusCode)
                 {
-                    var url = $"{BaseUrl}?q={Uri.EscapeDataString(query)}&maxResults=40&langRestrict=es";
-                    var response = await _httpClient.GetAsync(url);
+                    var json = await response.Content.ReadAsStringAsync();
+                    var results = ParseSearchResults(json);
 
-                    if (response.IsSuccessStatusCode)
+                    // Guardar en caché
+                    lock (_searchCache)
                     {
-                        var json = await response.Content.ReadAsStringAsync();
-                        var results = ParseSearchResults(json);
-
-                        // Guardar en caché
-                        lock (_searchCache)
-                        {
-                            _searchCache[cacheKey] = results;
-                        }
-                        return results;
+                        _searchCache[cacheKey] = results;
                     }
-                    else if ((int)response.StatusCode == 429) // Too Many Requests
-                    {
-                        if (attempt == maxRetries)
-                            throw new HttpRequestException("Límite de solicitudes a la API excedido. Intenta más tarde.");
-
-                        // Esperar antes de reintentar (backoff exponencial)
-                        await Task.Delay(delayMs);
-                        delayMs *= 2;
-                    }
-                    else
-                    {
-                        // Otro error HTTP
-                        throw new HttpRequestException($"Error en la API: {response.StatusCode}");
-                    }
+                    return results;
                 }
-                catch (HttpRequestException ex) when (ex.Message.Contains("429"))
+                else
                 {
-                    if (attempt == maxRetries) throw;
-                    await Task.Delay(delayMs);
-                    delayMs *= 2;
-                }
-                catch (Exception ex)
-                {
-                    // Otros errores (sin conexión, etc.)
-                    throw new Exception($"Error al buscar libros: {ex.Message}", ex);
+                    throw new HttpRequestException($"Error en la API: {response.StatusCode}");
                 }
             }
-
-            return new List<BookSearchResult>();
+            catch (Exception ex)
+            {
+                // Otros errores (sin conexión, etc.)
+                throw new Exception($"Error al buscar libros: {ex.Message}", ex);
+            }
         }
 
         /// <summary>
-        /// Obtiene el detalle completo de un libro por su ID de Google Books, con caché y reintentos.
+        /// Obtiene el detalle completo de un libro por su ID de OpenLibrary.
         /// </summary>
         public async Task<BookDetail?> GetBookDetailAsync(string id)
         {
@@ -104,54 +80,33 @@ namespace ProyectoFinal_Biblioteca.Services
                     return cachedDetail;
             }
 
-            const int maxRetries = 3;
-            int delayMs = 1000;
-
-            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            try
             {
-                try
-                {
-                    var url = $"{BaseUrl}/{id}";
-                    var response = await _httpClient.GetAsync(url);
+                var url = $"{WorksUrl}/{id}.json";
+                var response = await _httpClient.GetAsync(url);
 
-                    if (response.IsSuccessStatusCode)
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    var detail = ParseBookDetail(json);
+                    if (detail != null)
                     {
-                        var json = await response.Content.ReadAsStringAsync();
-                        var detail = ParseBookDetail(json);
-                        if (detail != null)
+                        lock (_detailCache)
                         {
-                            lock (_detailCache)
-                            {
-                                _detailCache[id] = detail;
-                            }
+                            _detailCache[id] = detail;
                         }
-                        return detail;
                     }
-                    else if ((int)response.StatusCode == 429)
-                    {
-                        if (attempt == maxRetries)
-                            throw new HttpRequestException("Límite de solicitudes a la API excedido. Intenta más tarde.");
-                        await Task.Delay(delayMs);
-                        delayMs *= 2;
-                    }
-                    else
-                    {
-                        return null; // Libro no encontrado u otro error no crítico
-                    }
+                    return detail;
                 }
-                catch (HttpRequestException ex) when (ex.Message.Contains("429"))
+                else
                 {
-                    if (attempt == maxRetries) throw;
-                    await Task.Delay(delayMs);
-                    delayMs *= 2;
-                }
-                catch
-                {
-                    return null;
+                    return null; // Libro no encontrado u otro error no crítico
                 }
             }
-
-            return null;
+            catch
+            {
+                return null;
+            }
         }
 
         // ------------------------------------------------------------
@@ -161,32 +116,62 @@ namespace ProyectoFinal_Biblioteca.Services
         private List<BookSearchResult> ParseSearchResults(string json)
         {
             var results = new List<BookSearchResult>();
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-
-            if (!root.TryGetProperty("items", out var items))
-                return results;
-
-            foreach (var item in items.EnumerateArray())
+            try
             {
-                var id = item.GetProperty("id").GetString();
-                var volume = item.GetProperty("volumeInfo");
-                var title = volume.GetProperty("title").GetString();
-                var authors = volume.TryGetProperty("authors", out var a)
-                    ? string.Join(", ", a.EnumerateArray().Select(x => x.GetString()))
-                    : "Autor desconocido";
-                var thumbnail = volume.TryGetProperty("imageLinks", out var img) &&
-                                img.TryGetProperty("smallThumbnail", out var thumb)
-                    ? thumb.GetString()
-                    : "";
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
 
-                results.Add(new BookSearchResult
+                if (!root.TryGetProperty("docs", out var docs))
+                    return results;
+
+                foreach (var doc_item in docs.EnumerateArray())
                 {
-                    Id = id ?? "",
-                    Title = title ?? "Sin título",
-                    Author = authors,
-                    ThumbnailUrl = thumbnail ?? ""
-                });
+                    // Usar el primer identificador disponible (ebook_key, has_fulltext, etc.)
+                    var id = "";
+                    if (doc_item.TryGetProperty("key", out var keyProp))
+                    {
+                        id = keyProp.GetString()?.Split('/').LastOrDefault() ?? "";
+                    }
+
+                    if (string.IsNullOrEmpty(id))
+                        continue;
+
+                    var title = doc_item.TryGetProperty("title", out var t) 
+                        ? t.GetString() ?? "Sin título" 
+                        : "Sin título";
+
+                    var author = "Autor desconocido";
+                    if (doc_item.TryGetProperty("author_name", out var authors))
+                    {
+                        var authorList = authors.EnumerateArray()
+                            .Select(x => x.GetString())
+                            .Where(x => !string.IsNullOrEmpty(x))
+                            .Take(3)
+                            .ToList();
+                        if (authorList.Count > 0)
+                            author = string.Join(", ", authorList);
+                    }
+
+                    var thumbnail = "";
+                    if (doc_item.TryGetProperty("cover_i", out var coverId))
+                    {
+                        var coverIdValue = coverId.GetInt64();
+                        thumbnail = $"https://covers.openlibrary.org/b/id/{coverIdValue}-M.jpg";
+                    }
+
+                    results.Add(new BookSearchResult
+                    {
+                        Id = id,
+                        Title = title,
+                        Author = author,
+                        ThumbnailUrl = thumbnail
+                    });
+                }
+            }
+            catch
+            {
+                // En caso de error al parsear, retornar lista vacía
+                return new List<BookSearchResult>();
             }
 
             return results;
@@ -194,56 +179,89 @@ namespace ProyectoFinal_Biblioteca.Services
 
         private BookDetail? ParseBookDetail(string json)
         {
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-
-            if (!root.TryGetProperty("volumeInfo", out var volume))
-                return null;
-
-            var title = volume.GetProperty("title").GetString();
-            var authors = volume.TryGetProperty("authors", out var a)
-                ? string.Join(", ", a.EnumerateArray().Select(x => x.GetString()))
-                : "";
-            var isbn = "";
-            if (volume.TryGetProperty("industryIdentifiers", out var ids))
+            try
             {
-                foreach (var idObj in ids.EnumerateArray())
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+
+                var title = root.TryGetProperty("title", out var t) 
+                    ? t.GetString() ?? "Sin título" 
+                    : "Sin título";
+
+                var author = "Autor desconocido";
+                if (root.TryGetProperty("authors", out var authorsArray))
                 {
-                    var type = idObj.GetProperty("type").GetString();
-                    if (type == "ISBN_13" || type == "ISBN_10")
+                    var authorList = new List<string>();
+                    foreach (var auth in authorsArray.EnumerateArray())
                     {
-                        isbn = idObj.GetProperty("identifier").GetString() ?? "";
-                        break;
+                        if (auth.TryGetProperty("name", out var name))
+                        {
+                            authorList.Add(name.GetString() ?? "");
+                        }
                     }
+                    if (authorList.Count > 0)
+                        author = string.Join(", ", authorList.Where(x => !string.IsNullOrEmpty(x)));
                 }
-            }
-            var publishedYear = 0;
-            if (volume.TryGetProperty("publishedDate", out var date))
-            {
-                var dateStr = date.GetString();
-                if (!string.IsNullOrEmpty(dateStr) && dateStr.Length >= 4)
-                    int.TryParse(dateStr.Substring(0, 4), out publishedYear);
-            }
-            var pageCount = volume.TryGetProperty("pageCount", out var pages) ? pages.GetInt32() : 0;
-            var description = volume.TryGetProperty("description", out var desc) ? desc.GetString() : "";
-            var coverUrl = volume.TryGetProperty("imageLinks", out var img) && img.TryGetProperty("thumbnail", out var thumb)
-                ? thumb.GetString()
-                : "";
-            var categories = volume.TryGetProperty("categories", out var cats)
-                ? cats.EnumerateArray().Select(c => c.GetString() ?? "").ToList()
-                : new List<string>();
 
-            return new BookDetail
+                var isbn = "";
+                if (root.TryGetProperty("isbn", out var isbnArray))
+                {
+                    isbn = isbnArray.EnumerateArray().FirstOrDefault().GetString() ?? "";
+                }
+
+                var publishedYear = 0;
+                if (root.TryGetProperty("first_publish_year", out var year))
+                {
+                    publishedYear = year.GetInt32();
+                }
+
+                var pageCount = 0;
+                if (root.TryGetProperty("number_of_pages", out var pages))
+                {
+                    pageCount = pages.GetInt32();
+                }
+
+                var description = "";
+                if (root.TryGetProperty("description", out var desc))
+                {
+                    description = desc.ValueKind == JsonValueKind.String 
+                        ? desc.GetString() ?? "" 
+                        : "";
+                }
+
+                var coverUrl = "";
+                if (root.TryGetProperty("covers", out var covers) && covers.GetArrayLength() > 0)
+                {
+                    var coverId = covers.EnumerateArray().First().GetInt64();
+                    coverUrl = $"https://covers.openlibrary.org/b/id/{coverId}-M.jpg";
+                }
+
+                var categories = new List<string>();
+                if (root.TryGetProperty("subjects", out var subjects))
+                {
+                    categories = subjects.EnumerateArray()
+                        .Select(s => s.GetString() ?? "")
+                        .Where(s => !string.IsNullOrEmpty(s))
+                        .Take(10)
+                        .ToList();
+                }
+
+                return new BookDetail
+                {
+                    Title = title,
+                    Author = author,
+                    Isbn = isbn,
+                    PublishedYear = publishedYear,
+                    PageCount = pageCount,
+                    Description = description,
+                    CoverUrl = coverUrl,
+                    Categories = categories
+                };
+            }
+            catch
             {
-                Title = title ?? "Sin título",
-                Author = authors,
-                Isbn = isbn,
-                PublishedYear = publishedYear,
-                PageCount = pageCount,
-                Description = description ?? "",
-                CoverUrl = coverUrl ?? "",
-                Categories = categories
-            };
+                return null;
+            }
         }
     }
 }

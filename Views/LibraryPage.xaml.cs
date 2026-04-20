@@ -9,4 +9,13 @@ public partial class LibraryPage : ContentPage
 		InitializeComponent();
 		BindingContext = viewModel;
 	}
+
+	protected override void OnAppearing()
+	{
+		base.OnAppearing();
+		if (BindingContext is LibraryViewModel vm)
+		{
+			vm.OnAppearing();
+		}
+	}
 }

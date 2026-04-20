@@ -31,5 +31,11 @@ namespace ProyectoFinal_Biblioteca.ViewModels
             await _db.SaveBookAsync(Book);
             await Shell.Current.GoToAsync("..");
         }
+
+        [RelayCommand]
+        private async Task Cancel()
+        {
+            await Shell.Current.GoToAsync("..");
+        }
     }
 }

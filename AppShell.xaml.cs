@@ -13,7 +13,7 @@ namespace ProyectoFinal_Biblioteca
             Routing.RegisterRoute("bookdetail", typeof(BookDetailPage));
             Routing.RegisterRoute("addbook", typeof(AddBookPage));
 
-            // Opcional: registrar las demás rutas por si se usan con GoToAsync
+            // Registrar las demás rutas
             Routing.RegisterRoute("library", typeof(LibraryPage));
             Routing.RegisterRoute("search", typeof(SearchPage));
             Routing.RegisterRoute("statistics", typeof(StatisticsPage));

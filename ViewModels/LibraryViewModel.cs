@@ -89,8 +89,17 @@ namespace ProyectoFinal_Biblioteca.ViewModels
         [RelayCommand]
         private async Task GoToDetails(Book book)
         {
-            var parameters = new Dictionary<string, object> { { "book", book } };
-            await Shell.Current.GoToAsync("bookdetail", parameters);
+            NavigationService.Instance.SelectedBook = book;
+            await Shell.Current.GoToAsync("bookdetail");
+        }
+
+        /// <summary>
+        /// Manejador que se ejecuta cuando la página se vuelve visible.
+        /// Recarga los libros cada vez que se navega hacia LibraryPage
+        /// </summary>
+        public async void OnAppearing()
+        {
+            await LoadBooks();
         }
     }
 }

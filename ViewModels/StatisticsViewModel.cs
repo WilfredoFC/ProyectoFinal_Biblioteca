@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using ProyectoFinal_Biblioteca.Drawables;
 using ProyectoFinal_Biblioteca.Services;
 
@@ -15,10 +16,11 @@ namespace ProyectoFinal_Biblioteca.ViewModels
         public StatisticsViewModel(DatabaseService db)
         {
             _db = db;
-            LoadStatistics();
+            LoadStatisticsCommand.Execute(null);
         }
 
-        private async void LoadStatistics()
+        [RelayCommand]
+        private async Task LoadStatistics()
         {
             var books = await _db.GetBooksAsync();
             var total = books.Count;
