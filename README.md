@@ -20,7 +20,7 @@ Este proyecto integra todos los conceptos aprendidos durante el curso:
 
 ##Funcionalidades implementadas
 
-### 📌 Parte 1 – Base de datos SQLite (5 puntos)
+### Parte 1 – Base de datos SQLite (5 puntos)
 - Modelo `Book` con atributos: título, autor, género, ISBN, año, páginas, descripción, URL de portada, estado de lectura, puntuación.
 - `DatabaseService` con métodos:
   - `SaveBookAsync` (insert/update inteligente)
